@@ -6,6 +6,7 @@
 #define DNODESTRUCTNAME fsw_infiltratorfs_dnode
 #include "fsw_core.h"
 
+#include "infiltratorfs/vendor/include/infilfs/endian.h"
 #include "infiltratorfs/vendor/include/infilfs/volume.h"
 
 struct fsw_infiltratorfs_volume {
