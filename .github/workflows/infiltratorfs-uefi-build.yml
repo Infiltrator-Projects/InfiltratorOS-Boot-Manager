@@ -1,0 +1,66 @@
+name: InfiltratorFS UEFI build
+
+on:
+  push:
+    paths:
+      - 'filesystems/fsw_infiltratorfs.c'
+      - 'filesystems/fsw_infiltratorfs.h'
+      - 'filesystems/infiltratorfs/**'
+      - 'filesystems/Make.gnuefi'
+      - 'filesystems/Makefile'
+      - '.github/workflows/infiltratorfs-uefi-build.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  gnuefi-x64:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out boot manager
+        uses: actions/checkout@v4
+
+      - name: Install GNU-EFI toolchain
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gnu-efi gcc make binutils
+
+      - name: Locate GNU-EFI files
+        id: paths
+        shell: bash
+        run: |
+          set -euo pipefail
+          CRT="$(dpkg -L gnu-efi | grep '/crt0-efi-x86_64\.o$' | head -n1)"
+          LDS="$(dpkg -L gnu-efi | grep '/elf_x86_64_efi\.lds$' | head -n1)"
+          LIBEFI="$(dpkg -L gnu-efi | grep '/libefi\.a$' | head -n1)"
+          LIBGNUEFI="$(dpkg -L gnu-efi | grep '/libgnuefi\.a$' | head -n1)"
+          test -n "$CRT" && test -n "$LDS" && test -n "$LIBEFI" && test -n "$LIBGNUEFI"
+          echo "EFICRT0=$(dirname "$CRT")" >> "$GITHUB_OUTPUT"
+          echo "EFILIB=$(dirname "$LIBEFI")" >> "$GITHUB_OUTPUT"
+          echo "GNUEFILIB=$(dirname "$LIBGNUEFI")" >> "$GITHUB_OUTPUT"
+          echo "CRT=$CRT"
+          echo "LDS=$LDS"
+          echo "LIBEFI=$LIBEFI"
+          echo "LIBGNUEFI=$LIBGNUEFI"
+
+      - name: Build InfiltratorFS EFI driver
+        shell: bash
+        run: |
+          set -euo pipefail
+          make -C filesystems infiltratorfs_gnuefi \
+            EFIINC=/usr/include/efi \
+            EFICRT0='${{ steps.paths.outputs.EFICRT0 }}' \
+            EFILIB='${{ steps.paths.outputs.EFILIB }}' \
+            GNUEFILIB='${{ steps.paths.outputs.GNUEFILIB }}'
+          test -s filesystems/infiltratorfs_x64.efi
+          file filesystems/infiltratorfs_x64.efi
+
+      - name: Reject unresolved operating-system runtime dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          if nm -u filesystems/infiltratorfs.so | grep -E ' (fopen|open|read|write|lseek|mmap|pthread_|dlopen|clock_gettime|gettimeofday)$'; then
+            echo 'Unexpected operating-system runtime dependency in EFI driver.' >&2
+            exit 1
+          fi
