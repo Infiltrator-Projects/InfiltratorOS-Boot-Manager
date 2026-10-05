@@ -53,6 +53,7 @@ jobs:
           cp -a /tmp/infiltratr-common/include/infiltratr "$DEST/include/"
           cp /tmp/infiltratr-common/src/arithmetic.c "$DEST/common/src/"
           cp /tmp/infiltratr-common/src/core.c "$DEST/common/src/"
+          cp /tmp/infiltratr-common/src/ascii_internal.h "$DEST/common/src/"
           cp /tmp/infiltratr-common/LICENSE "$DEST/common/LICENSE"
 
           # Compressed InfiltratorFS extents must remain readable before an OS
@@ -82,5 +83,5 @@ jobs:
             echo "Pinned InfiltratorFS vendor tree already current."
             exit 0
           fi
-          git commit -m "Vendor InfiltratorFS UEFI decompression dependencies"
+          git commit -m "Vendor InfiltratorFS UEFI dependencies"
           git push origin main
