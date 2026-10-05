@@ -26,15 +26,19 @@ jobs:
           INFILFS_COMMIT="0451f95cadf57484640d87eea2037e067bc7ed6f"
           COMMON_REPOSITORY="https://github.com/Infiltrator-Projects/Infiltrator-Libraries.git"
           COMMON_COMMIT="7cc5de3de0e94ed2cfcff0840bbb5346eb5c9c9f"
+          LZ4_REPOSITORY="https://github.com/lz4/lz4.git"
+          LZ4_COMMIT="ebb370ca83af193212df4dcbadcc5d87bc0de2f0"
           DEST="filesystems/infiltratorfs/vendor"
 
-          rm -rf /tmp/infiltratorfs /tmp/infiltratr-common "$DEST"
+          rm -rf /tmp/infiltratorfs /tmp/infiltratr-common /tmp/lz4 "$DEST"
           git clone --no-tags --filter=blob:none "$INFILFS_REPOSITORY" /tmp/infiltratorfs
           git -C /tmp/infiltratorfs checkout --detach "$INFILFS_COMMIT"
           git clone --no-tags --filter=blob:none "$COMMON_REPOSITORY" /tmp/infiltratr-common
           git -C /tmp/infiltratr-common checkout --detach "$COMMON_COMMIT"
+          git clone --no-tags --filter=blob:none "$LZ4_REPOSITORY" /tmp/lz4
+          git -C /tmp/lz4 checkout --detach "$LZ4_COMMIT"
 
-          mkdir -p "$DEST/include" "$DEST/src" "$DEST/common/src"
+          mkdir -p "$DEST/include" "$DEST/src" "$DEST/common/src" "$DEST/lz4"
           cp -a /tmp/infiltratorfs/include/infilfs "$DEST/include/"
           cp /tmp/infiltratorfs/src/checksum.c "$DEST/src/"
           cp /tmp/infiltratorfs/src/status.c "$DEST/src/"
@@ -46,11 +50,16 @@ jobs:
           cp /tmp/infiltratorfs/LICENSE "$DEST/LICENSE"
 
           # InfiltratorFS 0.18.94 pins this exact Infiltratr Common revision.
-          # Keep the dependency explicit rather than relying on a moving system library.
           cp -a /tmp/infiltratr-common/include/infiltratr "$DEST/include/"
           cp /tmp/infiltratr-common/src/arithmetic.c "$DEST/common/src/"
           cp /tmp/infiltratr-common/src/core.c "$DEST/common/src/"
           cp /tmp/infiltratr-common/LICENSE "$DEST/common/LICENSE"
+
+          # Compressed InfiltratorFS extents must remain readable before an OS
+          # exists, so the EFI driver carries a pinned freestanding LZ4 decoder.
+          cp /tmp/lz4/lib/lz4.c "$DEST/lz4/"
+          cp /tmp/lz4/lib/lz4.h "$DEST/lz4/"
+          cp /tmp/lz4/LICENSE "$DEST/lz4/LICENSE"
 
           cat > "$DEST/UPSTREAM" <<EOF
           Repository: Infiltrator-Projects/InfiltratorFS
@@ -60,6 +69,9 @@ jobs:
           Infiltratr Common repository: Infiltrator-Projects/Infiltrator-Libraries
           Infiltratr Common commit: $COMMON_COMMIT
           Infiltratr Common version: 1.19.35
+          LZ4 repository: lz4/lz4
+          LZ4 commit: $LZ4_COMMIT
+          LZ4 version: 1.10.0
           Purpose: read-only UEFI/FSW port for InfiltratorOS Boot Manager
           EOF
 
@@ -70,5 +82,5 @@ jobs:
             echo "Pinned InfiltratorFS vendor tree already current."
             exit 0
           fi
-          git commit -m "Vendor InfiltratorFS and exact Common dependency for UEFI"
+          git commit -m "Vendor InfiltratorFS UEFI decompression dependencies"
           git push origin main
