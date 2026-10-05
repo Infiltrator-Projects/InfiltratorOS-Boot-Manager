@@ -83,6 +83,13 @@ ntfs_gnuefi:
 	rm -f fsw_efi.o
 	+make DRIVERNAME=ntfs -f Make.gnuefi
 
+# InfiltratorFS is intentionally explicit while the new UEFI adapter is being
+# qualified. Once this target is proven by CI and real-media reads it can join
+# FILESYSTEMS_GNUEFI and the normal InfiltratorOS Boot Manager build.
+infiltratorfs_gnuefi:
+	rm -f fsw_efi.o
+	+make DRIVERNAME=infiltratorfs -f Make.gnuefi
+
 # Compiling filesystem drivers in parallel with GNU-EFI can cause build errors
 # and frozen systems on boot with drivers that do build OK, so disallow this....
 .NOTPARALLEL:
