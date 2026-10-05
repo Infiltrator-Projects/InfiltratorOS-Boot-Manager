@@ -6,6 +6,28 @@
 #include <stddef.h>
 #include <stdint.h>
 
+/* Declare the tiny libc surface before first use. The implementation below is
+ * deliberately self-contained because no operating-system C runtime exists in
+ * UEFI boot services. */
+void *malloc(size_t size);
+void free(void *pointer);
+void *calloc(size_t count, size_t size);
+void *realloc(void *pointer, size_t size);
+void *memset(void *destination, int value, size_t size);
+void *memcpy(void *destination, const void *source, size_t size);
+void *memmove(void *destination, const void *source, size_t size);
+int memcmp(const void *left, const void *right, size_t size);
+void *memchr(const void *memory, int value, size_t size);
+size_t strlen(const char *text);
+int strcmp(const char *left, const char *right);
+int strncmp(const char *left, const char *right, size_t size);
+char *strchr(const char *text, int value);
+char *strrchr(const char *text, int value);
+char *strcpy(char *destination, const char *source);
+char *strncpy(char *destination, const char *source, size_t size);
+void qsort(void *base_pointer, size_t count, size_t width,
+           int (*compare)(const void *, const void *));
+
 struct infs_uefi_alloc_header {
     UINTN size;
     UINTN reserved;
@@ -205,7 +227,7 @@ char *strncpy(char *destination, const char *source, size_t size)
         *out++ = *source++;
         --size;
     }
-    while (size--) 
+    while (size--)
         *out++ = 0;
     return destination;
 }
