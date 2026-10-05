@@ -14,6 +14,7 @@ VPATH = $(SRCDIR)
 HOSTARCH        = $(shell uname -m | sed s,i[3456789]86,ia32,)
 
 LOCAL_GNUEFI_CFLAGS   = -DFSTYPE=$(DRIVERNAME) -I$(SRCDIR) 
+LOCAL_GNUEFI_LDFLAGS  =
 ifeq ($(HOSTARCH),x86_64)
   LOCAL_GNUEFI_CFLAGS += "-DEFIAPI=__attribute__((ms_abi))" 
 endif
@@ -28,11 +29,15 @@ ifeq ($(DRIVERNAME),infiltratorfs)
   INFILFS_VENDOR = infiltratorfs/vendor
   VPATH = $(SRCDIR):infiltratorfs:$(INFILFS_VENDOR)/src:$(INFILFS_VENDOR)/common/src:$(INFILFS_VENDOR)/lz4
   LOCAL_GNUEFI_CFLAGS += -I$(INFILFS_VENDOR)/include -I$(INFILFS_VENDOR)/lz4 \
-                         -ffreestanding -fno-builtin -DLZ4_FREESTANDING=1 \
+                         -ffreestanding -fno-builtin -ffunction-sections -fdata-sections \
+                         -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=0 \
+                         -include infiltratorfs/uefi_libc.h \
+                         -DLZ4_FREESTANDING=1 \
                          -DLZ4_memcpy=memcpy -DLZ4_memset=memset -DLZ4_memmove=memmove
+  LOCAL_GNUEFI_LDFLAGS += --gc-sections
   OBJS = fsw_core.o fsw_efi.o fsw_efi_lib.o fsw_lib.o fsw_infiltratorfs.o \
          uefi_compat.o checksum.o status.o storage.o security.o fs.o volume.o \
-         arithmetic.o lz4.o
+         arithmetic.o core.o lz4.o
 endif
 
 TARGET          = $(DRIVERNAME)_$(FILENAME_CODE).efi
@@ -47,7 +52,7 @@ ifeq ($(HOSTARCH),aarch64)
 endif
 
 $(SHLIB_TARGET): $(OBJS)
-	$(LD) $(GNUEFI_LDFLAGS) $(SUBSYSTEM_LDFLAG) $(OBJS) -o $@ $(LOCAL_LIBS) $(GNUEFI_LIBS)
+	$(LD) $(GNUEFI_LDFLAGS) $(LOCAL_GNUEFI_LDFLAGS) $(SUBSYSTEM_LDFLAG) $(OBJS) -o $@ $(LOCAL_LIBS) $(GNUEFI_LIBS)
 
 $(TARGET): $(SHLIB_TARGET)
 	$(OBJCOPY) -j .text -j .sdata -j .data -j .dynamic -j .dynsym -j .rodata \
