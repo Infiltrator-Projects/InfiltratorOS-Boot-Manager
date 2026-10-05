@@ -1,0 +1,50 @@
+name: Import upstream rEFInd
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  import:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out destination repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Import exact upstream rEFInd master snapshot
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          UPSTREAM_SHA="cf542da4459ff18535b0ae3a7910af032834e469"
+          git clone --no-tags https://github.com/mix-mirror/rEFInd.git /tmp/refind
+          git -C /tmp/refind checkout --detach "$UPSTREAM_SHA"
+
+          find . -mindepth 1 -maxdepth 1 ! -name .git -exec rm -rf {} +
+          cp -a /tmp/refind/. ./
+          rm -rf ./.git
+
+          # Restore this repository's Git metadata after copying the snapshot.
+          git -C "$GITHUB_WORKSPACE" init >/dev/null
+          git -C "$GITHUB_WORKSPACE" remote add origin "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          git -C "$GITHUB_WORKSPACE" fetch origin main
+          git -C "$GITHUB_WORKSPACE" checkout -B main origin/main
+
+          # Replace the checked-out working tree with the exact upstream snapshot.
+          find . -mindepth 1 -maxdepth 1 ! -name .git -exec rm -rf {} +
+          cp -a /tmp/refind/. ./
+          rm -rf ./.git
+
+          git config user.name "InfiltratorOS Import"
+          git config user.email "actions@users.noreply.github.com"
+          git add -A
+          git commit -m "Import rEFInd upstream master at ${UPSTREAM_SHA}"
+          git push origin main
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
