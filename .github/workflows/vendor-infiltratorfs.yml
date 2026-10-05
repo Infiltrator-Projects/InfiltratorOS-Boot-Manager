@@ -1,0 +1,60 @@
+name: Vendor InfiltratorFS UEFI core
+
+on:
+  push:
+    paths:
+      - '.github/workflows/vendor-infiltratorfs.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  vendor:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out boot manager
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Vendor pinned portable InfiltratorFS source
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          INFILFS_REPOSITORY="https://github.com/Infiltrator-Projects/InfiltratorFS.git"
+          INFILFS_COMMIT="0451f95cadf57484640d87eea2037e067bc7ed6f"
+          DEST="filesystems/infiltratorfs/vendor"
+
+          rm -rf /tmp/infiltratorfs "$DEST"
+          git clone --no-tags --filter=blob:none "$INFILFS_REPOSITORY" /tmp/infiltratorfs
+          git -C /tmp/infiltratorfs checkout --detach "$INFILFS_COMMIT"
+
+          mkdir -p "$DEST/include" "$DEST/src"
+          cp -a /tmp/infiltratorfs/include/infilfs "$DEST/include/"
+          cp /tmp/infiltratorfs/src/checksum.c "$DEST/src/"
+          cp /tmp/infiltratorfs/src/status.c "$DEST/src/"
+          cp /tmp/infiltratorfs/src/storage.c "$DEST/src/"
+          cp /tmp/infiltratorfs/src/security.c "$DEST/src/"
+          cp /tmp/infiltratorfs/src/fs.c "$DEST/src/"
+          cp /tmp/infiltratorfs/src/volume.c "$DEST/src/"
+          cp -a /tmp/infiltratorfs/src/volume "$DEST/src/"
+          cp /tmp/infiltratorfs/LICENSE "$DEST/LICENSE"
+
+          cat > "$DEST/UPSTREAM" <<EOF
+          Repository: Infiltrator-Projects/InfiltratorFS
+          Commit: $INFILFS_COMMIT
+          Version: 0.18.94
+          On-disk format: 0.18
+          Purpose: read-only UEFI/FSW port for InfiltratorOS Boot Manager
+          EOF
+
+          git config user.name "InfiltratorOS Vendor Sync"
+          git config user.email "actions@users.noreply.github.com"
+          git add "$DEST"
+          if git diff --cached --quiet; then
+            echo "Pinned InfiltratorFS vendor tree already current."
+            exit 0
+          fi
+          git commit -m "Vendor InfiltratorFS 0.18.94 portable core for UEFI"
+          git push origin main
