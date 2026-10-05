@@ -28,7 +28,8 @@ ifeq ($(DRIVERNAME),infiltratorfs)
   INFILFS_VENDOR = infiltratorfs/vendor
   VPATH = $(SRCDIR):infiltratorfs:$(INFILFS_VENDOR)/src:$(INFILFS_VENDOR)/common/src:$(INFILFS_VENDOR)/lz4
   LOCAL_GNUEFI_CFLAGS += -I$(INFILFS_VENDOR)/include -I$(INFILFS_VENDOR)/lz4 \
-                         -ffreestanding -fno-builtin -DLZ4_FREESTANDING=1
+                         -ffreestanding -fno-builtin -DLZ4_FREESTANDING=1 \
+                         -DLZ4_memcpy=memcpy -DLZ4_memset=memset -DLZ4_memmove=memmove
   OBJS = fsw_core.o fsw_efi.o fsw_efi_lib.o fsw_lib.o fsw_infiltratorfs.o \
          uefi_compat.o checksum.o status.o storage.o security.o fs.o volume.o \
          arithmetic.o lz4.o
