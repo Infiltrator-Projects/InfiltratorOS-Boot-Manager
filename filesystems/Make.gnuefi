@@ -30,6 +30,7 @@ ifeq ($(DRIVERNAME),infiltratorfs)
   VPATH = $(SRCDIR):infiltratorfs:$(INFILFS_VENDOR)/src:$(INFILFS_VENDOR)/common/src:$(INFILFS_VENDOR)/lz4
   LOCAL_GNUEFI_CFLAGS += -I$(INFILFS_VENDOR)/include -I$(INFILFS_VENDOR)/lz4 \
                          -ffreestanding -fno-builtin -ffunction-sections -fdata-sections \
+                         -fvisibility=hidden \
                          -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=0 \
                          -include infiltratorfs/uefi_libc.h \
                          -DLZ4_FREESTANDING=1 \
