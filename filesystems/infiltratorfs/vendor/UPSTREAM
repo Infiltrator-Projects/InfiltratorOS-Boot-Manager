@@ -1,0 +1,5 @@
+Repository: Infiltrator-Projects/InfiltratorFS
+Commit: 0451f95cadf57484640d87eea2037e067bc7ed6f
+Version: 0.18.94
+On-disk format: 0.18
+Purpose: read-only UEFI/FSW port for InfiltratorOS Boot Manager
